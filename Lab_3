@@ -1,0 +1,80 @@
+import numpy as np
+
+# Parameters
+num_drones = 5
+area_size = 20  # 20x20 grid
+num_particles = 30
+iterations = 10  # running 10 iterations as you requested
+
+# PSO Hyperparameters
+w = 0.5    # inertia
+c1 = 1.5   # cognitive coefficient
+c2 = 1.5   # social coefficient
+
+dim = num_drones * 2  # x and y for each drone
+
+# Initialize particles and velocities
+particles = np.random.uniform(0, area_size, (num_particles, dim))
+velocities = np.zeros((num_particles, dim))
+
+pbest_positions = particles.copy()
+pbest_scores = np.full(num_particles, -np.inf)
+
+gbest_position = None
+gbest_score = -np.inf
+
+def fitness(position):
+    x = np.sum(position)  # sum of all coordinates
+    return 7*x+ 20
+
+for iter in range(iterations):
+    for i in range(num_particles):
+        score = fitness(particles[i])
+        
+        # Update personal best
+        if score > pbest_scores[i]:
+            pbest_scores[i] = score
+            pbest_positions[i] = particles[i].copy()
+        
+        # Update global best
+        if score > gbest_score:
+            gbest_score = score
+            gbest_position = particles[i].copy()
+    
+    # Update velocities and positions
+    r1, r2 = np.random.rand(), np.random.rand()
+    for i in range(num_particles):
+        velocities[i] = (w * velocities[i] +
+                         c1 * r1 * (pbest_positions[i] - particles[i]) +
+                         c2 * r2 * (gbest_position - particles[i]))
+        
+        particles[i] += velocities[i]
+        particles[i] = np.clip(particles[i], 0, area_size-1)
+
+    print(f"Iteration {iter}, Best Fitness: {gbest_score:.2f}")
+
+print("\nOptimized drone waypoints (x,y):")
+optimized_coords = gbest_position.reshape((num_drones, 2))
+for idx, coord in enumerate(optimized_coords):
+    print(f"Drone {idx+1}: {coord}")
+
+
+
+OUTPUT:
+Iteration 0, Best Fitness: 987.83
+Iteration 1, Best Fitness: 987.83
+Iteration 2, Best Fitness: 1076.60
+Iteration 3, Best Fitness: 1099.85
+Iteration 4, Best Fitness: 1113.23
+Iteration 5, Best Fitness: 1147.74
+Iteration 6, Best Fitness: 1187.75
+Iteration 7, Best Fitness: 1208.59
+Iteration 8, Best Fitness: 1214.87
+Iteration 9, Best Fitness: 1214.87
+
+Optimized drone waypoints (x,y):
+Drone 1: [19.          7.14014324]
+Drone 2: [19. 19.]
+Drone 3: [19.         12.27759823]
+Drone 4: [19. 19.]
+Drone 5: [18.2777772 19.       ]
