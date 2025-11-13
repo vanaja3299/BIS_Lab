@@ -1,0 +1,80 @@
+import numpy as np
+
+
+def objective_function(x):
+   
+    return np.sum(x ** 2)
+
+
+def grey_wolf_optimizer(obj_func, dim=3, n_wolves=20, max_iter=100, lb=-5, ub=5):
+
+    wolves = np.random.uniform(lb, ub, (n_wolves, dim))
+    fitness = np.array([obj_func(w) for w in wolves])
+
+   
+    alpha, beta, delta = np.zeros(dim), np.zeros(dim), np.zeros(dim)
+    alpha_score, beta_score, delta_score = float("inf"), float("inf"), float("inf")
+
+    for i in range(n_wolves):
+        f = fitness[i]
+        if f < alpha_score:
+            delta_score, beta_score, alpha_score = beta_score, alpha_score, f
+            delta, beta, alpha = beta.copy(), alpha.copy(), wolves[i].copy()
+        elif f < beta_score:
+            delta_score, beta_score = beta_score, f
+            delta, beta = beta.copy(), wolves[i].copy()
+        elif f < delta_score:
+            delta_score = f
+            delta = wolves[i].copy()
+
+ 
+    for t in range(max_iter):
+        a = 2 - t * (2 / max_iter)
+        for i in range(n_wolves):
+            for j in range(dim):
+                r1, r2 = np.random.rand(), np.random.rand()
+                A1 = 2 * a * r1 - a
+                C1 = 2 * r2
+                D_alpha = abs(C1 * alpha[j] - wolves[i][j])
+                X1 = alpha[j] - A1 * D_alpha
+
+                r1, r2 = np.random.rand(), np.random.rand()
+                A2 = 2 * a * r1 - a
+                C2 = 2 * r2
+                D_beta = abs(C2 * beta[j] - wolves[i][j])
+                X2 = beta[j] - A2 * D_beta
+
+                r1, r2 = np.random.rand(), np.random.rand()
+                A3 = 2 * a * r1 - a
+                C3 = 2 * r2
+                D_delta = abs(C3 * delta[j] - wolves[i][j])
+                X3 = delta[j] - A3 * D_delta
+
+                wolves[i][j] = (X1 + X2 + X3) / 3  
+
+       
+            wolves[i] = np.clip(wolves[i], lb, ub)
+
+     
+        for i in range(n_wolves):
+            f = obj_func(wolves[i])
+            if f < alpha_score:
+                delta_score, beta_score, alpha_score = beta_score, alpha_score, f
+                delta, beta, alpha = beta.copy(), alpha.copy(), wolves[i].copy()
+            elif f < beta_score:
+                delta_score, beta_score = beta_score, f
+                delta, beta = beta.copy(), wolves[i].copy()
+            elif f < delta_score:
+                delta_score = f
+                delta = wolves[i].copy()
+
+        if t % 10 == 0 or t == max_iter - 1:
+            print(f"Iteration {t+1}/{max_iter}, Best Fitness: {alpha_score:.6f}")
+
+    print("\n Best Solution:", alpha)
+    print(" Best Fitness:", alpha_score)
+    return alpha, alpha_score
+
+
+if __name__ == "__main__":
+    best_sol, best_fit = grey_wolf_optimizer(objective_function, dim=3, n_wolves=25, max_iter=100)
